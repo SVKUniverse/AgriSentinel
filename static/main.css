@@ -1,0 +1,183 @@
+/* AgriSentinel Custom Styles */
+
+:root {
+    --primary-green: #28a745;
+    --warning-yellow: #ffc107;
+    --danger-red: #dc3545;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.card {
+    border-radius: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.list-group-item {
+    border-left: 3px solid transparent;
+    transition: border-color
+    0.2s;
+}
+
+.list-group-item:hover {
+    border-left-color: var(--primary-green);
+}
+
+/* Map Styles */
+#landMap, #addParcelMap {
+    border-radius: 8px;
+    z-index: 1;
+}
+
+.leaflet-popup-content {
+    font-size: 14px;
+}
+
+.leaflet-popup-content h6 {
+    margin-bottom: 8px;
+    color: var(--primary-green);
+}
+
+/* Loading Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Health Score Badges */
+.health-badge-healthy {
+    background-color: #91cf60;
+    color: white;
+}
+
+.health-badge-moderate {
+    background-color: #fee090;
+    color: #333;
+}
+
+.health-badge-warning {
+    background-color: #fc8d59;
+    color: white;
+}
+
+.health-badge-critical {
+    background-color: #d73027;
+    color: white;
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 6px;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    #landMap, #addParcelMap {
+        height: 400px !important;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Button Group Spacing */
+.btn-group > .btn {
+    margin-right: 5px;
+}
+
+/* Tab Content */
+.tab-content {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 20px;
+}
+
+.nav-tabs .nav-link {
+    border-radius: 8px 8px 0 0;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: white;
+    border-bottom-color: white;
+}
+
+/* Progress Bar */
+.progress {
+    border-radius: 6px;
+}
+
+/* Corner Recording Status */
+#cornerStatus {
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+/* Geometry Status Alert */
+#geometryStatus {
+    margin-bottom: 0;
+}
+
+/* Modal Adjustments */
+.modal-xl {
+    max-width: 95%;
+}
+
+@media (max-width: 768px) {
+    .modal-xl {
+        max-width: 100%;
+        margin: 10px;
+    }
+}
+
+/* Leaflet Draw Toolbar Customization */
+.leaflet-draw-toolbar a {
+    background-color: #fff;
+}
+
+/* Custom Tooltip for Health Zones */
+.health-tooltip {
+    background: white;
+    border: 2px solid #333;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Analytics Chart Placeholder */
+.analytics-placeholder {
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #6c757d;
+}

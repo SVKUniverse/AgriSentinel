@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    {% if session.user_id %}
+        <!-- Dashboard View -->
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">Welcome back, {{ user.username }}! 👋</h1>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <!-- Stats Cards -->
+            <div class="col-md-4 mb-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h3 class="text-success">{{ parcels|length }}</h3>
+                        <p class="text-muted mb-0">Land Parcels</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h3 class="text-warning">{{ alerts|length }}</h3>
+                        <p class="text-muted mb-0">Recent Alerts</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h3 class="text-info">{{ parcels|selectattr('last_computed_at')|list|length }}</h3>
+                        <p class="text-muted mb-0">Analyzed Parcels</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Parcels -->
+            <div class="col-md-8 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📍 Your Land Parcels</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if parcels %}
+                            <div class="list-group">
+                                {% for parcel in parcels[:5] %}
+                                    <a href="{{ url_for('land_detail', land_id=parcel.id) }}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ parcel.name }}</h6>
+                                            <small class="text-muted">{{ parcel.created_at.strftime('%Y-%m-%d') }}</small>
+                                        </div>
+                                        <p class="mb-1 small text-muted">{{ parcel.description[:100] if parcel.description else 'No description' }}</p>
+                                        {% if parcel.last_computed_at %}
+                                            <small class="text-success">✓ Last analyzed: {{ parcel.last_computed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% else %}
+                                            <small class="text-warning">⚠ Not yet analyzed</small>
+                                        {% endif %}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                <a href="{{ url_for('lands') }}" class="btn btn-outline-success">View All Parcels →</a>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No land parcels yet. <a href="{{ url_for('lands') }}">Add your first parcel</a> to start monitoring.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">🔔 Recent Alerts</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if alerts %}
+                            <div class="list-group">
+                                {% for alert in alerts %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <span class="badge bg-{{ 'danger' if alert.severity == 'critical' else 'warning' }}">
+                                                {{ alert.severity }}
+                                            </span>
+                                            <small class="text-muted">{{ alert.created_at.strftime('%m/%d') }}</small>
+                                        </div>
+                                        <p class="mb-0 small mt-2">{{ alert.message }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No alerts. All systems normal! 👍</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5>🚀 Quick Actions</h5>
+                        <a href="{{ url_for('lands') }}" class="btn btn-success me-2 mb-2">+ Add New Parcel</a>
+                        <button class="btn btn-outline-secondary mb-2" onclick="alert('Export feature coming soon!')">📥 Export Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Landing Page for Non-Logged-In Users -->
+        <div class="text-center">
+            <h1 class="display-4 mb-4">🌾 AgriSentinel</h1>
+            <p class="lead mb-4">AI-Powered Crop Health Monitoring for Smart Farming</p>
+            
+            <div class="row my-5">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-3 mb-3">🛰️</div>
+                            <h5>Satellite Monitoring</h5>
+                            <p class="text-muted">Track crop health using NDVI and multispectral analysis</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-3 mb-3">🤖</div>
+                            <h5>AI Detection</h5>
+                            <p class="text-muted">Anomaly detection to identify stress zones early</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-3 mb-3">📊</div>
+                            <h5>Visual Analytics</h5>
+                            <p class="text-muted">Interactive heatmaps and health reports</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <a href="{{ url_for('register') }}" class="btn btn-success btn-lg me-2">Get Started</a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-success btn-lg">Login</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
