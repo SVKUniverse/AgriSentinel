@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}{{ parcel.name }} - AgriSentinel{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h2>{{ parcel.name }}</h2>
+            <p class="text-muted">{{ parcel.description }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('lands') }}" class="btn btn-outline-secondary">← Back to Lands</a>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3" id="landTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="map-tab" data-bs-toggle="tab" data-bs-target="#map-content" type="button">
+                🗺️ Map & Analysis
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics-content" type="button">
+                📊 Analytics
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts-content" type="button">
+                🔔 Alerts
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="landTabContent">
+        <!-- Map Tab -->
+        <div class="tab-pane fade show active" id="map-content">
+            <div class="row">
+                <div class="col-lg-9">
+                    <div class="card">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <span>Interactive Map</span>
+                            <div>
+                                <button class="btn btn-light btn-sm" id="runAnalysisBtn">
+                                    <span id="analysisBtnText">🔬 Run Analysis</span>
+                                    <span id="analysisSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                                </button>
+                                <button class="btn btn-light btn-sm" id="downloadGeoJsonBtn">
+                                    📥 Download GeoJSON
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="landMap" style="height: 600px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    <!-- Legend -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <strong>Health Legend</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #91cf60;">■</span> Healthy (0.7-1.0)
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #fee090;">■</span> Moderate (0.5-0.7)
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #fc8d59;">■</span> Warning (0.3-0.5)
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #d73027;">■</span> Critical (&lt;0.3)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <strong>Quick Info</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">
+                                <strong>Created:</strong><br>
+                                <small class="text-muted">{{ parcel.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </p>
+                            <p class="mb-2">
+                                <strong>Last Analysis:</strong><br>
+                                <small class="text-muted" id="lastAnalysisTime">
+                                    {% if parcel.last_computed_at %}
+                                        {{ parcel.last_computed_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        Not yet analyzed
+                                    {% endif %}
+                                </small>
+                            </p>
+                            <p class="mb-0">
+                                <strong>Area:</strong><br>
+                                <small class="text-muted" id="areaDisplay">Calculating...</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div class="tab-pane fade" id="analytics-content">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-success" id="totalZones">-</h3>
+                            <p class="text-muted mb-0">Total Zones</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-success" id="healthyZones">-</h3>
+                            <p class="text-muted mb-0">Healthy</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-warning" id="warningZones">-</h3>
+                            <p class="text-muted mb-0">Warning</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-danger" id="criticalZones">-</h3>
+                            <p class="text-muted mb-0">Critical</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Health Overview</strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Average Health Score</label>
+                        <div class="progress" style="height: 30px;">
+                            <div id="avgHealthBar" class="progress-bar bg-success" role="progressbar" style="width: 0%">
+                                <span id="avgHealthText">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="analyticsMessage" class="alert alert-info">
+                        Run analysis to see detailed statistics
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div class="tab-pane fade" id="alerts-content">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Alert History</strong>
+                </div>
+                <div class="card-body">
+                    {% if alerts %}
+                        <div class="list-group">
+                            {% for alert in alerts %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <span class="badge bg-{{ 'danger' if alert.severity == 'critical' else 'warning' }}">
+                                            {{ alert.severity }}
+                                        </span>
+                                        <small class="text-muted">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </div>
+                                    <p class="mb-0 mt-2">{{ alert.message }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No alerts for this parcel.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<script>
+    window.LAND_DATA = {
+        id: {{ parcel.id }},
+        name: "{{ parcel.name }}",
+        geojson: {{ geojson_data | tojson | safe }}
+    };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize land detail map
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeLandDetailMap();
+    });
+</script>
+{% endblock %}
