@@ -140,7 +140,7 @@ def land_detail(land_id):
     
     # Security: ensure user owns this parcel
     if parcel.user_id != user.id:
-        flash('You do not have permission to view this parcel.', 'danger')
+        flash('You do not have permission to view this plot.', 'danger')
         return redirect(url_for('lands'))
     
     # Parse GeoJSON for display
@@ -252,7 +252,7 @@ def api_land_detail(land_id):
         Alert.query.filter_by(land_id=land_id).delete()
         db.session.delete(parcel)
         db.session.commit()
-        return jsonify({'message': 'Parcel deleted successfully'})
+        return jsonify({'message': 'Plot deleted successfully'})
 
 
 @app.route('/api/lands/<int:land_id>/compute', methods=['POST'])
