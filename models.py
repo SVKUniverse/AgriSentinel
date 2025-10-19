@@ -1,3 +1,8 @@
+"""
+Database models for AgriSentinel
+Uses SQLAlchemy ORM with SQLite
+"""
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 

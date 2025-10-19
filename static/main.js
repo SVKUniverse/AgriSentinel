@@ -340,6 +340,18 @@ function initializeLandDetailMap() {
     // Setup download button
     document.getElementById('downloadGeoJsonBtn').addEventListener('click', downloadGeoJSON);
 
+    // Setup "Use Today" button
+    document.getElementById('useTodayBtn').addEventListener('click', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('referenceDateInput').value = today;
+    });
+    
+    // Set default date to today if empty
+    const dateInput = document.getElementById('referenceDateInput');
+    if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
     // Load area
     loadParcelArea();
 }
@@ -351,17 +363,27 @@ async function runAnalysis() {
     const btn = document.getElementById('runAnalysisBtn');
     const btnText = document.getElementById('analysisBtnText');
     const spinner = document.getElementById('analysisSpinner');
+    
+    // Get reference date from input
+    const referenceDateInput = document.getElementById('referenceDateInput');
+    const referenceDate = referenceDateInput.value;
 
     btn.disabled = true;
     btnText.classList.add('d-none');
     spinner.classList.remove('d-none');
 
     try {
+        const requestBody = {};
+        if (referenceDate) {
+            requestBody.reference_date = referenceDate;
+        }
+        
         const response = await fetch(`/api/lands/${window.LAND_DATA.id}/compute`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
@@ -402,22 +424,48 @@ function displayHeatmap(heatmapGeoJSON) {
 
     // Add new heatmap layer
     heatmapLayer = L.geoJSON(heatmapGeoJSON, {
-        style: function(feature) {
-            return {
+        pointToLayer: function(feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 8,
                 fillColor: feature.properties.color,
-                fillOpacity: 0.6,
                 color: '#333',
-                weight: 1
-            };
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.7
+            });
+        },
+        style: function(feature) {
+            // For polygon features
+            if (feature.geometry.type !== 'Point') {
+                return {
+                    fillColor: feature.properties.color,
+                    fillOpacity: 0.6,
+                    color: '#333',
+                    weight: 1
+                };
+            }
         },
         onEachFeature: function(feature, layer) {
             const props = feature.properties;
-            layer.bindPopup(`
+            let popupContent = `
                 <h6>Health Zone</h6>
                 <strong>Health Score:</strong> ${props.health_score}<br>
                 <strong>Severity:</strong> ${props.severity}<br>
                 <strong>Anomaly Score:</strong> ${props.anomaly_score}
-            `);
+            `;
+            
+            // Add NDVI/EVI if available
+            if (props.ndvi !== undefined) {
+                popupContent += `<br><strong>NDVI:</strong> ${props.ndvi}`;
+            }
+            if (props.evi !== undefined) {
+                popupContent += `<br><strong>EVI:</strong> ${props.evi}`;
+            }
+            if (props.anomaly_label) {
+                popupContent += `<br><strong>Status:</strong> ${props.anomaly_label}`;
+            }
+            
+            layer.bindPopup(popupContent);
         }
     }).addTo(landDetailMapInstance);
 }
@@ -457,6 +505,14 @@ function updateAnalytics(stats) {
             `<br><strong class="text-danger">⚠️ ${stats.critical_count} critical zones detected requiring immediate attention!</strong>` : 
             'All zones are in acceptable condition.'}
     `;
+    
+    // Display additional satellite metrics if available
+    if (stats.avg_ndvi !== undefined) {
+        message.innerHTML += `<br><strong>Average NDVI:</strong> ${stats.avg_ndvi}`;
+    }
+    if (stats.avg_evi !== undefined) {
+        message.innerHTML += `<br><strong>Average EVI:</strong> ${stats.avg_evi}`;
+    }
 }
 
 /**

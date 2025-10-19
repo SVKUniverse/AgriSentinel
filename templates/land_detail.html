@@ -39,16 +39,31 @@
             <div class="row">
                 <div class="col-lg-9">
                     <div class="card">
-                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                            <span>Interactive Map</span>
-                            <div>
-                                <button class="btn btn-light btn-sm" id="runAnalysisBtn">
-                                    <span id="analysisBtnText">🔬 Run Analysis</span>
-                                    <span id="analysisSpinner" class="spinner-border spinner-border-sm d-none"></span>
-                                </button>
-                                <button class="btn btn-light btn-sm" id="downloadGeoJsonBtn">
-                                    📥 Download GeoJSON
-                                </button>
+                        <div class="card-header bg-success text-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Interactive Map</span>
+                                <div>
+                                    <button class="btn btn-light btn-sm" id="runAnalysisBtn">
+                                        <span id="analysisBtnText">🔬 Run Analysis</span>
+                                        <span id="analysisSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                                    </button>
+                                    <button class="btn btn-light btn-sm" id="downloadGeoJsonBtn">
+                                        📥 Download GeoJSON
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-auto">
+                                    <label class="form-label small mb-1 text-white">Analysis Date:</label>
+                                </div>
+                                <div class="col-auto">
+                                    <input type="date" class="form-control form-control-sm" id="referenceDateInput" 
+                                           value="{{ parcel.last_computed_at.strftime('%Y-%m-%d') if parcel.last_computed_at else '' }}"
+                                           max="{{ datetime.now().strftime('%Y-%m-%d') }}">
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-outline-light btn-sm" id="useTodayBtn">Use Today</button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body p-0">

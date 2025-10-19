@@ -27,8 +27,7 @@ body {
 
 .list-group-item {
     border-left: 3px solid transparent;
-    transition: border-color
-    0.2s;
+    transition: border-color 0.2s;
 }
 
 .list-group-item:hover {
@@ -180,4 +179,9 @@ footer {
     background-color: #f8f9fa;
     border-radius: 8px;
     color: #6c757d;
+}
+
+/* Date Input Styling */
+input[type="date"].form-control-sm {
+    max-width: 150px;
 }

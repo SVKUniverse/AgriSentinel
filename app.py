@@ -1,3 +1,8 @@
+"""
+AgriSentinel Flask Application
+Main application file with routes and REST endpoints
+"""
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -8,7 +13,7 @@ from models import db, User, LandParcel, Alert
 from processing import compute_ndvi_and_run_model, calculate_polygon_area
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///agrisentinel.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -144,7 +149,7 @@ def land_detail(land_id):
     # Get alerts for this parcel
     alerts = Alert.query.filter_by(land_id=land_id).order_by(Alert.created_at.desc()).limit(10).all()
     
-    return render_template('land_detail.html', parcel=parcel, geojson_data=geojson_data, alerts=alerts)
+    return render_template('land_detail.html', parcel=parcel, geojson_data=geojson_data, alerts=alerts, datetime=datetime)
 
 
 # REST API Endpoints
@@ -255,7 +260,7 @@ def api_land_detail(land_id):
 def api_compute_heatmap(land_id):
     """
     Trigger crop health computation and return heatmap GeoJSON
-    This calls the placeholder processing function
+    Accepts optional reference_date in request body
     """
     user = get_current_user()
     parcel = LandParcel.query.get_or_404(land_id)
@@ -267,9 +272,19 @@ def api_compute_heatmap(land_id):
     # Parse GeoJSON
     geojson_obj = json.loads(parcel.geojson)
     
-    # Call processing function (placeholder implementation)
-    # TODO: This is where real NDVI computation and ML inference will happen
-    heatmap_geojson, stats = compute_ndvi_and_run_model(geojson_obj)
+    # Get reference date from request body (optional)
+    data = request.get_json() or {}
+    reference_date_str = data.get('reference_date')
+    
+    reference_date = None
+    if reference_date_str:
+        try:
+            reference_date = datetime.strptime(reference_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    # Call processing function with reference date
+    heatmap_geojson, stats = compute_ndvi_and_run_model(geojson_obj, reference_date)
     
     # Update last computed timestamp
     parcel.last_computed_at = datetime.utcnow()
@@ -289,7 +304,8 @@ def api_compute_heatmap(land_id):
     return jsonify({
         'heatmap': heatmap_geojson,
         'stats': stats,
-        'computed_at': parcel.last_computed_at.isoformat()
+        'computed_at': parcel.last_computed_at.isoformat(),
+        'reference_date': reference_date_str if reference_date_str else datetime.now().strftime('%Y-%m-%d')
     })
 
 
