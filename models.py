@@ -1,8 +1,3 @@
-"""
-Database models for AgriSentinel
-Uses SQLAlchemy ORM with SQLite
-"""
-
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -10,7 +5,6 @@ db = SQLAlchemy()
 
 
 class User(db.Model):
-    """User model for authentication"""
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -27,7 +21,6 @@ class User(db.Model):
 
 
 class LandParcel(db.Model):
-    """Land parcel model - stores farm plots with geometry"""
     __tablename__ = 'land_parcels'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -46,7 +39,6 @@ class LandParcel(db.Model):
 
 
 class Alert(db.Model):
-    """Alert model - stores health warnings for land parcels"""
     __tablename__ = 'alerts'
     
     id = db.Column(db.Integer, primary_key=True)

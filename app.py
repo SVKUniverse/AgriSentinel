@@ -1,8 +1,3 @@
-"""
-AgriSentinel Flask Application
-Main application file with routes and REST endpoints
-"""
-
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -41,7 +36,6 @@ def get_current_user():
 # Routes
 @app.route('/')
 def index():
-    """Landing page - redirect to dashboard if logged in"""
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return render_template('index.html')
@@ -50,7 +44,6 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    """User dashboard showing summary"""
     user = get_current_user()
     parcels = LandParcel.query.filter_by(user_id=user.id).all()
     alerts = Alert.query.join(LandParcel).filter(LandParcel.user_id == user.id).order_by(Alert.created_at.desc()).limit(5).all()
@@ -59,7 +52,6 @@ def dashboard():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration"""
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
@@ -96,7 +88,6 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login"""
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
@@ -116,7 +107,6 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """User logout"""
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
@@ -125,7 +115,6 @@ def logout():
 @app.route('/lands')
 @login_required
 def lands():
-    """List all land parcels for current user"""
     user = get_current_user()
     parcels = LandParcel.query.filter_by(user_id=user.id).order_by(LandParcel.created_at.desc()).all()
     return render_template('lands.html', parcels=parcels)
@@ -134,7 +123,6 @@ def lands():
 @app.route('/lands/<int:land_id>')
 @login_required
 def land_detail(land_id):
-    """Detail view for a specific land parcel"""
     user = get_current_user()
     parcel = LandParcel.query.get_or_404(land_id)
     
@@ -258,10 +246,6 @@ def api_land_detail(land_id):
 @app.route('/api/lands/<int:land_id>/compute', methods=['POST'])
 @login_required
 def api_compute_heatmap(land_id):
-    """
-    Trigger crop health computation and return heatmap GeoJSON
-    Accepts optional reference_date in request body
-    """
     user = get_current_user()
     parcel = LandParcel.query.get_or_404(land_id)
     
@@ -312,7 +296,6 @@ def api_compute_heatmap(land_id):
 @app.route('/api/lands/<int:land_id>/area', methods=['GET'])
 @login_required
 def api_land_area(land_id):
-    """Calculate and return land area in hectares"""
     user = get_current_user()
     parcel = LandParcel.query.get_or_404(land_id)
     

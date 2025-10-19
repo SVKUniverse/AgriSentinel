@@ -1,8 +1,3 @@
-"""
-Processing module for AgriSentinel
-Contains NDVI computation and ML anomaly detection using Google Earth Engine
-"""
-
 import ee
 import pandas as pd
 import datetime
@@ -21,7 +16,6 @@ trained_model = None
 
 
 def maskS2clouds(image):
-    """Adaptive cloud masking for Sentinel-2 SR (handles old & new band versions)."""
     band_names = image.bandNames()
     
     def qa60_mask():
@@ -42,10 +36,6 @@ def maskS2clouds(image):
 
 
 def get_monthly_s2_data_last_years(aoi, reference_date=None, scale=10, years_back=5):
-    """
-    Fetch Sentinel-2 SR bands (B2, B4, B8) and compute NDVI/EVI
-    for the same month as reference_date across last N years.
-    """
     if reference_date is None:
         reference_date = datetime.date.today()
 
@@ -126,11 +116,6 @@ def get_monthly_s2_data_last_years(aoi, reference_date=None, scale=10, years_bac
 
 
 def get_s2_data_for_date(aoi, reference_date, scale=10, numPixels=1000):
-    """
-    Fetch Sentinel-2 data around the reference_date (±7 days window).
-    Returns a DataFrame ready for prediction.
-    """
-    # Create a window around the reference date (7 days before and after)
     start_date = reference_date - datetime.timedelta(days=7)
     end_date = reference_date + datetime.timedelta(days=7)
     
@@ -188,24 +173,11 @@ def get_s2_data_for_date(aoi, reference_date, scale=10, numPixels=1000):
 
 
 def compute_ndvi_and_run_model(geojson_obj, reference_date=None):
-    """
-    Main processing function - computes NDVI/EVI and runs anomaly detection
-    
-    Args:
-        geojson_obj: GeoJSON object (Polygon or MultiPolygon)
-        reference_date: datetime.date object or None (uses today if None)
-    
-    Returns:
-        tuple: (heatmap_geojson, stats_dict)
-    """
     global scaler, trained_model
     
-    print("Starting real satellite analysis...")
-    
-    # Convert GeoJSON to EE Geometry
+    print("Starting real satellite analysis...")    
     aoi = ee.Geometry(geojson_obj)
     
-    # Use provided reference date or today
     if reference_date is None:
         ref_date = datetime.date.today()
     else:
@@ -214,7 +186,6 @@ def compute_ndvi_and_run_model(geojson_obj, reference_date=None):
     print(f"Reference date: {ref_date}")
     
     try:
-        # Step 1: Train model on historical data
         print("Training model on historical data...")
         train_df = get_monthly_s2_data_last_years(aoi, reference_date=ref_date, years_back=5)
         
@@ -224,57 +195,46 @@ def compute_ndvi_and_run_model(geojson_obj, reference_date=None):
         train_features = train_df[['NDVI', 'EVI']].dropna()
         X_train = scaler.fit_transform(train_features)
         
-        # Train Isolation Forest
         trained_model = IsolationForest(
             n_estimators=200,
-            contamination=0.05,
+            contamination=0.03,
             random_state=42
         )
         trained_model.fit(X_train)
         print(f"Model trained on {len(train_features)} samples")
         
-        # Step 2: Get current data and predict
         print("Fetching current satellite data...")
         current_df = get_s2_data_for_date(aoi, ref_date, scale=10, numPixels=1000)
         
         if current_df.empty:
             raise ValueError("No current data available")
         
-        # Predict anomalies
         X_current = scaler.transform(current_df[['NDVI', 'EVI']].fillna(0))
         current_df['anomaly_score'] = trained_model.decision_function(X_current)
         current_df['anomaly_label'] = trained_model.predict(X_current)
         
-        # Normalize anomaly scores to 0-1 range (higher = worse)
         min_score = current_df['anomaly_score'].min()
         max_score = current_df['anomaly_score'].max()
         current_df['normalized_anomaly'] = 1 - ((current_df['anomaly_score'] - min_score) / (max_score - min_score + 1e-8))
         
         print(f"Analyzed {len(current_df)} points")
         
-        # Step 3: Generate heatmap GeoJSON
         heatmap_geojson = generate_heatmap_from_points(current_df, geojson_obj)
         
-        # Step 4: Compute statistics
         stats = compute_statistics_from_df(current_df)
         
         return heatmap_geojson, stats
         
     except Exception as e:
         print(f"Error in processing: {str(e)}")
-        # Fallback to dummy data if GEE fails
         print("Falling back to dummy data")
         return generate_dummy_heatmap(geojson_obj)
 
 
 def generate_heatmap_from_points(df, aoi_geojson):
-    """
-    Generate heatmap GeoJSON from point predictions
-    """
     features = []
     
     for idx, row in df.iterrows():
-        # Determine severity based on normalized anomaly score
         anomaly = row['normalized_anomaly']
         
         if anomaly > 0.7:
@@ -315,9 +275,6 @@ def generate_heatmap_from_points(df, aoi_geojson):
 
 
 def compute_statistics_from_df(df):
-    """
-    Compute summary statistics from predictions
-    """
     anomaly_counts = df['normalized_anomaly'].apply(lambda x: 
         'critical' if x > 0.7 else 
         'warning' if x > 0.5 else 
@@ -338,9 +295,6 @@ def compute_statistics_from_df(df):
 
 
 def generate_dummy_heatmap(geojson_obj):
-    """
-    Fallback dummy heatmap if GEE fails
-    """
     from shapely.geometry import Polygon
     
     geom = shape(geojson_obj)
@@ -416,9 +370,6 @@ def generate_dummy_heatmap(geojson_obj):
 
 
 def calculate_polygon_area(geojson_obj):
-    """
-    Calculate area of polygon in hectares
-    """
     geom = shape(geojson_obj)
     area_deg_sq = geom.area
     area_km_sq = area_deg_sq * (111 * 111)
